@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro"
+>
+<head>
+    <meta charset="UTF-8">
+    <title>仓库管理系统</title>
+    <!--<link rel="stylesheet" href="/element-ui-2.13.2.css">-->
+    <script src="/vue.js"></script>
+    <!--<script src="/element-ui-2.13.2.js"></script>-->
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="/axios.min.js"></script>
+    <style>
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            line-height: 60px;
+        }
+
+        .el-aside {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-container style="height: 500px; border: 1px solid #eee">
+        <el-aside width="300px" style="background-color: rgb(238, 241, 246)">
+            <el-menu :default-openeds="['1', '3']">
+                <el-submenu index="1">
+                    <template slot="title"><i class="el-icon-caret-bottom"></i>系统菜单</template>
+
+                    <el-submenu index="1-4">
+                        <template slot="title">收货管理</template>
+                        <a href="/page/storelist"><el-menu-item index="1-4-1">仓库管理</el-menu-item></a>
+                    </el-submenu>
+                    <el-submenu index="1-4">
+                        <template slot="title">库存查询</template>
+                        <a href="/page/storelist"><el-menu-item index="1-4-1">入库</el-menu-item></a>
+                        <a href="/page/storelist"><el-menu-item index="1-4-1">出库</el-menu-item></a>
+                    </el-submenu>
+                </el-submenu>
+
+            </el-menu>
+        </el-aside>
+
+        <el-container>
+            <el-header style="text-align: right; font-size: 16px">
+                <!--<el-dropdown>-->
+                <!--<i class="el-icon-setting" style="margin-right: 15px"></i>-->
+                <!--<el-dropdown-menu slot="dropdown">-->
+                <!--<el-dropdown-item>查看</el-dropdown-item>-->
+                <!--<el-dropdown-item>新增</el-dropdown-item>-->
+                <!--<el-dropdown-item>删除</el-dropdown-item>-->
+                <!--</el-dropdown-menu>-->
+                <!--</el-dropdown>-->
+
+                <!--自己的xxxx登录-->
+                <span>当前用户:</span>
+                <span id="aa"></span>
+            </el-header>
+            <template>
+
+                <!--弹框  修改   visible可见-->
+                <el-dialog title="修改" :visible.sync="dialogFormVisible">
+                    <el-form :model="storeByEdit">
+                        <el-form-item label="仓库名称" :label-width="formLabelWidth">
+                            <el-input v-model="storeByEdit.name"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="仓库地址" :label-width="formLabelWidth">
+                            <el-input v-model="storeByEdit.address"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="管理员" :label-width="formLabelWidth">
+                            <el-input v-model="storeByEdit.manager" ></el-input>
+                        </el-form-item>
+
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible = false">取 消</el-button>
+                        <!--<el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>-->
+                        <el-button type="primary" @click="updateStore">确 定</el-button>
+                    </div>
+                </el-dialog>
+
+                <!--弹框  添加   visible可见-->
+                <el-dialog title="添加" :visible.sync="addFormVisible">
+                    <el-form :model="storeByEdit1">
+                        <el-form-item label="仓库名称" :label-width="formLabelWidth">
+                            <el-input v-model="storeByEdit1.name"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="仓库地址" :label-width="formLabelWidth">
+                            <el-input v-model="storeByEdit1.address"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="管理员" :label-width="formLabelWidth">
+                            <el-input v-model="storeByEdit1.manager" ></el-input>
+                        </el-form-item>
+
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="addFormVisible = false">取 消</el-button>
+                        <!--<el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>-->
+                        <el-button type="primary" @click="addStore">确 定</el-button>
+                    </div>
+                </el-dialog>
+
+
+                <!--全查-->
+                <div>
+                    <el-table
+                            :data="tableData"
+                            border
+                            style="width: 100%">
+                        <el-table-column
+                                prop="id"
+                                label="仓库编号"
+                                width="180">
+                        </el-table-column>
+                        <el-table-column
+                                prop="name"
+                                label="仓库名称"
+                                width="180">
+                        </el-table-column>
+                        <el-table-column
+                                prop="address"
+                                label="仓库地址"
+                                width="180">
+                        </el-table-column>
+                        <el-table-column
+                                prop="manager"
+                                label="仓库管理员"
+                                width="180">
+                        </el-table-column>
+
+                        <el-table-column label="操作">
+                            <template slot-scope="scope">
+                                <el-button
+                                        type="success"
+                                        size="mini"
+                                        @click="handleEdit(scope.$index, scope.row)">修改</el-button>
+
+                                <el-popover placement="top" width="160">
+                                    <p>这是一段内容这是一段内容确定删除吗？</p>
+                                    <div style="text-align: right; margin: 0">
+                                        <el-button size="mini" type="text" @click="visible">取消</el-button>
+                                        <el-button type="primary" size="mini" @click="visible(scope.$index, scope.row)">确定</el-button>
+                                    </div>
+                                    <el-button
+                                            size="mini" slot="reference"
+                                            type="primary">删除</el-button></el-popover>
+
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+
+                <div class="block">
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="currentPage"
+                            :page-sizes="[10, 20, 30, 40]"
+                            :page-size="10"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="total">
+                    </el-pagination>
+                    <el-button type="info"  @click="addBtn" style="margin-left: 41%">创建新仓库</el-button>
+                </div>
+
+            </template>
+
+        </el-container>
+    </el-container>
+
+
+</div>
+
+<script>
+
+    var vm = new Vue({
+        el:"#app",
+        data:{
+            tableData: [],
+            currentPage: 1,
+            page:1,
+            limit:10,
+            total:0,
+
+            storeByEdit:{},
+            storeByEdit1:{},
+            //弹框  可见
+            dialogFormVisible: false,
+            addFormVisible: false,
+
+            formLabelWidth:'100px',
+
+
+        },
+
+        methods:{
+            //添加
+            addStore(){
+                axios.post('/store/addOne', this.storeByEdit1).then(res=> {
+                    console.log(res);
+                if(res.data.code==20000){
+                    this. addFormVisible= false,
+                        this.$message({
+                            message: '添加成功',
+                            type: 'success'
+                        });
+                }else{
+                    //没有提示修改好
+                    this.$message.error(res.data.msg);
+                }
+            });
+
+            },
+
+
+            //确定 修改
+            updateStore(){
+                //alert("发送数据到后台")
+                axios.post('/store/updateOne', this.storeByEdit).then(res=> {
+                    console.log(res)
+                if(res.data.code==20000){
+                    this. dialogFormVisible= false,
+                        this.$message({
+                            message: '修改成功',
+                            type: 'success'
+                        });
+                }else{
+                    //没有提示修改好
+                    this.$message.error(res.data.msg);
+                }
+            });
+            },
+
+            //增加
+            addBtn:function(){
+                alert("执行增加的方法")
+                this. addFormVisible=true;
+            },
+            //编辑  修改
+            handleEdit(index, row) {
+                console.log(index, row);
+                //第一个是索引，第二个是数据！！！
+                //点击后  应当弹出 弹出框 可见
+                this. dialogFormVisible=true;
+                //赋值给row
+                this.storeByEdit=row;
+                console.log(this.storeByEdit)
+
+            },
+
+
+            //删除22222
+            visible(index, row) {
+                axios.get("/store/deleteOne",{
+                    params:{
+                        id:row.id
+                    }
+                }).then(res=>{
+                    console.log(res)
+                    if(res.data.code=200){
+                    this.$message({
+                        message: '删除成功',
+                        type: 'success'
+                    });
+                }else{
+                    this.$message.error('删除失败');
+                }
+            });
+            },
+
+            //条数
+            handleSizeChange(val) {
+                console.log(`每页 ${val} 条`);
+                this.loadTable(this.page,val);
+            },
+            handleCurrentChange(val) {
+                console.log(`当前页: ${val}`);
+                this.loadTable(val,this.limit); //页面
+            },
+            loadTable:function(page,limit){
+                axios.get("/store/selectPageAll", {
+                    params:{
+                        page:page,
+                        limit:limit,
+                    }
+                }).then(res=>{
+                    console.log(res);
+                    //把json数组赋值给tableData
+                    this.tableData = res.data.data.list;
+                    this.total = res.data.data.total;
+                var username = sessionStorage.getItem("username")
+                document.querySelector("#aa").innerHTML=username
+            });
+            }
+        },
+        created(){
+            this.loadTable(this.page,this.limit);
+        }
+
+        // created:function () {
+        //     //页面一加载就要访问url  /student/selectAll
+        //     axios.get("/student/selectPageAll", {
+        //         params:{
+        //             page:page,
+        //             limit:limit
+        //         }
+        // }).then(res=>{
+        //         console.log(res)
+        //         //把json数组赋值给tableData
+        //         this.tableData=res.data.data
+        //     });
+        // }
+    })
+</script>
+</body>
+</html>
